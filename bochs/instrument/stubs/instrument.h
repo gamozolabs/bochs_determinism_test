@@ -172,8 +172,10 @@ void bx_instr_vmexit(unsigned cpu, Bit32u reason, Bit64u qualification);
 #define BX_INSTR_TLB_CNTRL(cpu_id, what, new_cr3)
 #define BX_INSTR_PREFETCH_HINT(cpu_id, what, seg, offset)
 
+void perform_logging(Bit64u typ, Bit64u arg);
+
 /* execution */
-#define BX_INSTR_BEFORE_EXECUTION(cpu_id, i)
+#define BX_INSTR_BEFORE_EXECUTION(cpu_id, i) perform_logging(1, 0);
 #define BX_INSTR_AFTER_EXECUTION(cpu_id, i)
 #define BX_INSTR_REPEAT_ITERATION(cpu_id, i)
 

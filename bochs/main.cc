@@ -280,8 +280,12 @@ void print_statistics_tree(bx_param_c *node, int level)
 }
 #endif
 
+Bit64u initial_time = 0;
+
 int bxmain(void)
 {
+  initial_time = __rdtsc();
+
 #ifdef HAVE_LOCALE_H
   // Initialize locale (for isprint() and other functions)
   setlocale (LC_ALL, "");
@@ -961,6 +965,10 @@ bx_bool load_and_init_display_lib(void)
 
 int bx_begin_simulation(int argc, char *argv[])
 {
+  extern Bit64u initial_time;
+  Bit64u boot_time = __rdtsc() - initial_time;
+  printf("simstart %I64u\n", boot_time);
+
   bx_user_quit = 0;
   if (SIM->get_param_bool(BXPN_RESTORE_FLAG)->get()) {
     if (!SIM->restore_config()) {

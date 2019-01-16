@@ -60,6 +60,11 @@ void BX_CPU_C::cpu_loop(void)
   BX_CPU_THIS_PTR prev_rip = RIP; // commit new EIP
   BX_CPU_THIS_PTR speculative_rsp = 0;
 
+  extern Bit64u initial_time;
+  Bit64u boot_time = __rdtsc() - initial_time;
+  printf("Bochs took %I64u to launch\n", boot_time);
+  //exit(-1);
+
   while (1) {
 
     // check on events which occurred for previous instructions (traps)

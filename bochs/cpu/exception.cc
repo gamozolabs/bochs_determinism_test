@@ -24,6 +24,10 @@
 #include "bochs.h"
 #include "cpu.h"
 #define LOG_THIS BX_CPU_THIS_PTR
+#include <winsock2.h>
+#include <Ws2tcpip.h>
+#include <tchar.h>
+#include <strsafe.h>
 
 #include "param_names.h"
 #include "iodev/iodev.h"
@@ -688,8 +692,79 @@ void BX_CPU_C::real_mode_int(Bit8u vector, bx_bool push_error, Bit16u error_code
   BX_CPU_THIS_PTR clear_RF();
 }
 
+struct _determinism_log_entry {
+    Bit64u typ;
+    Bit64u ticks;
+    Bit64u rip;
+};
+
+static HANDLE hPipe = INVALID_HANDLE_VALUE;
+
+static const size_t NUM_ELEMENTS = 50000;
+
+static struct _determinism_log_entry determ_log_bufs[NUM_ELEMENTS] = { 0 };
+static Bit64u determ_log_bufs_ents = 0;
+
+void perform_logging(Bit64u typ, Bit64u arg) {
+    if(hPipe == INVALID_HANDLE_VALUE) {
+      char pipename[256];
+      sprintf(pipename, "\\\\.\\pipe\\mynamedpipe%d", GetCurrentProcessId());
+
+      _tprintf( TEXT("\nPipe Server: Main thread awaiting client connection on %s\n"), pipename);
+
+      hPipe = CreateNamedPipeA( 
+          pipename,             // pipe name 
+          PIPE_ACCESS_DUPLEX,       // read/write access 
+          PIPE_TYPE_MESSAGE |       // message type pipe 
+          PIPE_READMODE_MESSAGE |   // message-read mode 
+          PIPE_WAIT,                // blocking mode 
+          PIPE_UNLIMITED_INSTANCES, // max. instances  
+          32 * 1024 * 1024,                  // output buffer size 
+          32 * 1024 * 1024,                  // input buffer size 
+          0,                        // client time-out 
+          NULL);                    // default security attribute 
+
+      if (hPipe == INVALID_HANDLE_VALUE) 
+      {
+          _tprintf(TEXT("CreateNamedPipe failed, GLE=%d.\n"), GetLastError()); 
+          exit(-1);
+      }
+ 
+      // Wait for the client to connect; if it succeeds, 
+      // the function returns a nonzero value. If the function
+      // returns zero, GetLastError returns ERROR_PIPE_CONNECTED. 
+ 
+      if(!ConnectNamedPipe(hPipe, NULL)) {
+         _tprintf(TEXT("ConnectNamedPipe failed, GLE=%d.\n"), GetLastError()); 
+          exit(-1);
+      }
+
+      printf("PIPE CONNECTED\n");
+    }
+
+    determ_log_bufs[determ_log_bufs_ents].typ   = typ;
+    determ_log_bufs[determ_log_bufs_ents].ticks = bx_pc_system.time_ticks();
+    determ_log_bufs[determ_log_bufs_ents].rip   = RIP;
+    determ_log_bufs_ents++;
+   
+    if(determ_log_bufs_ents == NUM_ELEMENTS) {
+        DWORD bread;
+
+        if(!WriteFile(hPipe, (char*)&determ_log_bufs, sizeof(determ_log_bufs),
+                      &bread, NULL) || bread != sizeof(determ_log_bufs)){
+            _tprintf(TEXT("WriteFile failed, GLE=%d.\n"), GetLastError()); 
+            exit(-1);
+        }
+
+        // Reset log buffer state
+        determ_log_bufs_ents = 0;
+    }
+}
+
 void BX_CPU_C::interrupt(Bit8u vector, unsigned type, bx_bool push_error, Bit16u error_code)
 {
+    perform_logging(0, vector);
+
 #if BX_DEBUGGER
   BX_CPU_THIS_PTR show_flag |= Flag_intsig;
 #if BX_DEBUG_LINUX

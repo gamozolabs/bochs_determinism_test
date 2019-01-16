@@ -1,0 +1,7 @@
+bochs_build
+.vscode
+*.txt
+*.log
+*.vspx
+tags
+*.iso
