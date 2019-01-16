@@ -75,11 +75,11 @@ fn main() -> std::io::Result<()> {
         let b = unsafe { *(buf_b.as_ptr() as *const Entry) };
 
         // Make sure each instance is doing the same thing
-        /*if a.rip != b.rip {
+        if a.rip != b.rip {
             print!("Mismatch on entry {}\n", entry);
             print!("A: {:#x?}\nB: {:#x?}\n", a, b);
             panic!("DIVERGENCE");
-        }*/
+        }
 
         // Update entry counter
         entry += 1;
