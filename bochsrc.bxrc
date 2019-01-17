@@ -12,11 +12,11 @@ ata0: enabled=true, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-slave: type=cdrom, path="FreeBSD-12.0-RELEASE-amd64-disc1.iso", status=inserted, model="Generic 1234", biosdetect=auto
 pci: enabled=1, chipset=i440fx
 vga: extension=vbe, update_freq=60, realtime=0
-cpu: count=1, ips=50000000, model=corei7_skylake_x, reset_on_triple_fault=0, cpuid_limit_winnt=0, ignore_bad_msrs=1, mwait_is_nop=0
+cpu: count=1, ips=25000000, model=corei7_skylake_x, reset_on_triple_fault=0, cpuid_limit_winnt=0, ignore_bad_msrs=1, mwait_is_nop=0
 print_timestamps: enabled=0
 port_e9_hack: enabled=0
 private_colormap: enabled=0
-clock: sync=none, time0=10000, rtc_sync=0
+clock: sync=none, time0=10000, rtc_sync=0, clock_sync=none
 #log: bochsout.txt
 logprefix: %t%e%d
 debug: action=ignore, pci=ignore

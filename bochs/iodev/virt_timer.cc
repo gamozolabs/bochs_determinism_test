@@ -219,6 +219,8 @@ int bx_virt_timer_c::register_timer(void *this_ptr, bx_timer_handler_t handler,
                                     bx_bool active, bx_bool realtime,
                                     const char *id)
 {
+    realtime = 0;
+
   //We don't like starting with a zero period timer.
   BX_ASSERT((!active) || (useconds>0));
 
@@ -246,6 +248,7 @@ int bx_virt_timer_c::register_timer(void *this_ptr, bx_timer_handler_t handler,
 
   if (realtime) {
     BX_DEBUG(("Timer #%d ('%s') using realtime synchronisation mode", i, timer[i].id));
+    __debugbreak();
   } else {
     BX_DEBUG(("Timer #%d ('%s') using standard mode", i, timer[i].id));
   }

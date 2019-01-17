@@ -228,7 +228,7 @@ void BX_CPP_AttrRegparmN(1) BX_CPU_C::linkTrace(bxInstruction_c *i)
     return;
 #endif
 
-#define BX_HANDLERS_CHAINING_MAX_DEPTH 1000
+#define BX_HANDLERS_CHAINING_MAX_DEPTH 100
 
   // do not allow extreme trace link depth / avoid host stack overflow
   // (could happen with badly compiled instruction handlers)
@@ -268,6 +268,7 @@ void BX_CPP_AttrRegparmN(1) BX_CPU_C::linkTrace(bxInstruction_c *i)
     i = entry->i;
     BX_EXECUTE_INSTRUCTION(i);
   }
+
 }
 
 #endif

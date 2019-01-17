@@ -28,6 +28,7 @@
 #include <Ws2tcpip.h>
 #include <tchar.h>
 #include <strsafe.h>
+#include <direct.h>
 
 #include "param_names.h"
 #include "iodev/iodev.h"
@@ -694,8 +695,11 @@ void BX_CPU_C::real_mode_int(Bit8u vector, bx_bool push_error, Bit16u error_code
 
 struct _determinism_log_entry {
     Bit64u typ;
+    Bit64u arg;
     Bit64u ticks;
+    Bit64u tilnext;
     Bit64u rip;
+    Bit64u icount;
 };
 
 static HANDLE hPipe = INVALID_HANDLE_VALUE;
@@ -704,6 +708,21 @@ static const size_t NUM_ELEMENTS = 50000;
 
 static struct _determinism_log_entry determ_log_bufs[NUM_ELEMENTS] = { 0 };
 static Bit64u determ_log_bufs_ents = 0;
+static Bit64u kenny_loggins = 0;
+
+void flush_log() {
+    DWORD bread;
+
+    if(!WriteFile(hPipe, (char*)&determ_log_bufs,
+                sizeof(struct _determinism_log_entry) * determ_log_bufs_ents,
+                &bread, NULL) || bread != sizeof(struct _determinism_log_entry) * determ_log_bufs_ents){
+        _tprintf(TEXT("WriteFile failed, GLE=%d.\n"), GetLastError()); 
+        exit(-1);
+    }
+
+    // Reset log buffer state
+    determ_log_bufs_ents = 0;
+}
 
 void perform_logging(Bit64u typ, Bit64u arg) {
     if(hPipe == INVALID_HANDLE_VALUE) {
@@ -742,10 +761,37 @@ void perform_logging(Bit64u typ, Bit64u arg) {
       printf("PIPE CONNECTED\n");
     }
 
-    determ_log_bufs[determ_log_bufs_ents].typ   = typ;
-    determ_log_bufs[determ_log_bufs_ents].ticks = bx_pc_system.time_ticks();
-    determ_log_bufs[determ_log_bufs_ents].rip   = RIP;
+    if(typ == 1 && BX_CPU_THIS_PTR icount == 100000000) {
+        char buf[128];
+        sprintf(buf, "foopie%u", GetCurrentProcessId());
+        if(fopen(buf, "rb") != NULL) {
+            printf("LETS TAKE A SNIPEPR SNAPER\n");
+            system("rmdir /s /q apples");
+            _mkdir("apples");
+            SIM->save_state("apples");
+ 
+            perform_logging(0x13371337, 0);
+            flush_log();
+
+            Sleep(INFINITE);
+        }
+    }
+
+    determ_log_bufs[determ_log_bufs_ents].typ     = typ;
+    determ_log_bufs[determ_log_bufs_ents].arg     = arg;
+    determ_log_bufs[determ_log_bufs_ents].ticks   = bx_pc_system.time_ticks();
+    determ_log_bufs[determ_log_bufs_ents].tilnext = bx_pc_system.getNumCpuTicksLeftNextEvent();
+    determ_log_bufs[determ_log_bufs_ents].rip     = RIP;
+    determ_log_bufs[determ_log_bufs_ents].icount  = BX_CPU_THIS_PTR icount;
+
+    /*if(kenny_loggins == 62943435008) {
+        CloseHandle(hPipe);
+        exit(-1);
+        //__debugbreak();
+    }*/
+
     determ_log_bufs_ents++;
+    kenny_loggins++;
    
     if(determ_log_bufs_ents == NUM_ELEMENTS) {
         DWORD bread;

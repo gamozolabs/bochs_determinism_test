@@ -5,3 +5,6 @@ bochs_build
 *.vspx
 tags
 *.iso
+apples
+foopie*
+
